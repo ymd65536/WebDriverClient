@@ -43,7 +43,7 @@ Public Function SendRequest(method As String, url As String, Optional Data As Di
 
   ' 送信完了待ち
   Do While client.readyState < 4
-      DoEvents
+    DoEvents
   Loop
   ' レスポンスをDictionaryに変換してリターン
   Debug.Print client.responseText
@@ -422,11 +422,21 @@ Function SwitchToFrame(TagName As String, FrameName As String, Optional DefaultF
   Dim handle As String
   
   ' スイッチするフレームを特定
+  Dim param_tmp As Variant
   Dim param        As Collection
   Dim DicTagName   As Dictionary
   Dim FrameElement As Variant
   Dim ElementItem  As String
-  Dim FrameIdx     As Integer: FrameIdx = 0
+  
+  Dim FrameIdx        As Integer: FrameIdx = 0
+  Dim FrameIdxTmp     As Integer: FrameIdxTmp = 0
+  
+  ' コンテキストのスイッチ状況を修正
+  handle = ""
+  Set params = Nothing
+  Set params = New Dictionary
+  params.Add "handle", handle
+  SendRequest "POST", EndPointUrl + "/" + SessionId + "/window", params
   
   ElementId = ""
   Set params = New Dictionary
@@ -435,8 +445,6 @@ Function SwitchToFrame(TagName As String, FrameName As String, Optional DefaultF
   
   ' 複数のエレメントを探す
   Set params = SendRequest("POST", EndPointUrl + "/" + SessionId + "/elements", params)
-  
-  Dim param_tmp As Variant
   Set param = params("value")
   
   If param.Count = 0 Then
@@ -450,33 +458,30 @@ Function SwitchToFrame(TagName As String, FrameName As String, Optional DefaultF
       If TypeName(DicTagName("value")) = "String" Then
         ' name 属性のValueをチェック
         If DicTagName("value") = FrameName Then
-          FrameIdx = FrameIdx + 1
+          FrameIdx = FrameIdxTmp + 1
+          Exit For
         End If
+        FrameIdxTmp = FrameIdxTmp + 1
       End If
     Next
   End If
   
+  FrameIdx = FrameIdx - 1
+  
   ' デフォルトのフレームナンバーは検索にヒット数より小さくなければならない。
-  If FrameIdx > 1 Then
+  If FrameIdx < 0 Then
     If DefaultFrameNo >= FrameIdx Then
       MsgBox "フレームがありません"
       End
     Else
       FrameIdx = DefaultFrameNo
     End If
-  ElseIf FrameIdx = 1 Then
-    FrameIdx = FrameIdx - 1
   End If
-  ' コンテキストのスイッチ状況を修正
-  handle = ""
-  Set params = Nothing
-  Set params = New Dictionary
-  params.Add "handle", handle
-  SendRequest "POST", EndPointUrl + "/" + SessionId + "/window", params
   
   ' 特定のフレームにスイッチ
   Set params = Nothing
   Set params = New Dictionary
+  
   params.Add "id", FrameIdx
   SendRequest "POST", EndPointUrl + "/" + SessionId + "/frame", params
   If TypeName(params("value")) = "String" Then
@@ -485,4 +490,5 @@ Function SwitchToFrame(TagName As String, FrameName As String, Optional DefaultF
     SwitchToFrame = "error"
   End If
 End Function
+
 
