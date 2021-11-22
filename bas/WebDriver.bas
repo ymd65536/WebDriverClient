@@ -16,6 +16,13 @@ Public Const EdgeDriverPath As String = "D:\edgedriver_win32\msedgedriver.exe"
 Private fs                  As FileSystemObject
 Public params               As Dictionary
 
+Function DriverStatus() As Boolean
+  Dim StatusDic As Dictionary
+  
+  Set StatusDic = SendRequest("GET", "http://localhost:9515/status", New Dictionary)
+  DriverStatus = StatusDic("value")("ready")
+End Function
+
 Sub SetSessionId(testSessionId As String)
   SessionId = testSessionId
 End Sub
@@ -46,7 +53,7 @@ Public Function SendRequest(method As String, url As String, Optional Data As Di
     DoEvents
   Loop
   ' レスポンスをDictionaryに変換してリターン
-  Debug.Print client.responseText
+  ' Debug.Print client.responseText
   Set Json = JsonConverter.ParseJson(client.responseText)
   If IsNull(Json("value")) Then
     Set Data = New Dictionary
@@ -196,7 +203,7 @@ Public Function ClickElement(SetElementId As String) As Boolean
   
   Set ClickResult = SendRequest("POST", EndPointUrl + "/" + SessionId + "/element/" + ElementId + "/click", params)
   
-  Debug.Print ClickResult("value")
+  ' Debug.print ClickResult("value")
   
   ClickElement = True
 
@@ -385,10 +392,10 @@ End Function
 '
 ' JavaScript を実行
 '
-Public Sub ExcuteScriptSync()
+Public Sub ExcuteScriptSync(Script As String)
   Dim SetValue    As String
   Set params = New Dictionary
-  params.Add "script", "document.getElementsByTagName('frame').table_frame.setAttribute('id','test')"
+  params.Add "script", Script
   params.Add "args", New Collection
   Set params = SendRequest("POST", EndPointUrl + "/" + SessionId + "/execute/sync", params)
 End Sub
@@ -466,6 +473,7 @@ Function SwitchToFrame(TagName As String, FrameName As String, Optional DefaultF
     Next
   End If
   
+  ' カウント値-1 が フレームIDになる
   FrameIdx = FrameIdx - 1
   
   ' デフォルトのフレームナンバーは検索にヒット数より小さくなければならない。
