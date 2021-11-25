@@ -53,7 +53,7 @@ Public Function SendRequest(method As String, url As String, Optional Data As Di
     DoEvents
   Loop
   ' レスポンスをDictionaryに変換してリターン
-  ' Debug.Print client.responseText
+  Debug.Print client.responseText
   Set Json = JsonConverter.ParseJson(client.responseText)
   If IsNull(Json("value")) Then
     Set Data = New Dictionary
@@ -69,13 +69,18 @@ End Function
 Public Function OpenBrowser() As Boolean
   
   Dim ResultParam  As Dictionary
+  Dim Options      As New Dictionary
+  
   Set fs = New FileSystemObject
   ' WebDriverの起動。デフォルトで9515番ポートを監視
   If fs.FileExists(EdgeDriverPath) Then
     Shell EdgeDriverPath, vbMinimizedNoFocus
     Set params = New Dictionary
+    
+    Options.Add "--headless", True
+    
     ' ブラウザ起動パラメータの作成
-    params.Add "capabilities", New Dictionary
+    params.Add "capabilities", Options
     params.Add "desiredCapabilities", Nothing
     ' ブラウザ起動
     Set ResultParam = Nothing
@@ -499,4 +504,17 @@ Function SwitchToFrame(TagName As String, FrameName As String, Optional DefaultF
   End If
 End Function
 
-
+'
+' ページのソースを取得
+'
+Function GetPageSource() As String
+  Set params = Nothing
+  Set params = New Dictionary
+  Set params = SendRequest("GET", EndPointUrl + "/" + SessionId + "/source", New Dictionary)
+  
+  If TypeName(params("value")) = "String" Then
+    GetPageSource = params("value")
+  Else
+    GetPageSource = "error"
+  End If
+End Function
